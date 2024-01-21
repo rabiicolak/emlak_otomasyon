@@ -1,0 +1,186 @@
+#include <iostream>
+#include <iomanip>
+#include <cstring>
+#include <fstream>
+#include <conio.h>
+
+using namespace std;
+
+struct Emlak
+{
+    char adres[100];
+    double fiyat;
+    int odalar;
+};
+
+void EmlakEkle();
+void EmlakListele();
+void EmlakAra();
+void EmlakSil();
+
+int main()
+{
+    char anaMenuSecim;
+    do
+    {
+        system("cls");
+
+        cout << "|------ Emlakçı Otomasyonu ------|" << endl;
+        cout << "|  1. Emlak Ekle                 |" << endl;
+        cout << "|  2. Emlakları Listele          |" << endl;
+        cout << "|  3. Emlak Ara                  |" << endl;
+        cout << "|  4. Emlak Sil                  |" << endl;
+        cout << "|  5. Çıkış                      |" << endl;
+        cout << "|---------------------------------|" << endl;
+
+        cout << "Bir seçenek seçin (1-5): ";
+        cin >> anaMenuSecim;
+
+        switch (anaMenuSecim)
+        {
+        case '1':
+            EmlakEkle();
+            break;
+        case '2':
+            EmlakListele();
+            break;
+        case '3':
+            EmlakAra();
+            break;
+        case '4':
+            EmlakSil();
+            break;
+        }
+
+        if (anaMenuSecim != '5')
+        {
+            cout << "Ana menüye dönmek için 'a' tuşuna basın, çıkmak için 'c' tuşuna basın: ";
+            char anaMenuDonus;
+            cin >> anaMenuDonus;
+            if (anaMenuDonus != 'a')
+            {
+                break;
+            }
+        }
+
+    } while (anaMenuSecim != '5');
+
+    return 0;
+}
+
+void EmlakEkle()
+{
+    ofstream dosya("emlaklar.dat", ios::binary | ios::app);
+    Emlak emlak;
+
+    cout << "Emlak Adresini Girin: ";
+    cin.ignore();
+    cin.getline(emlak.adres, sizeof(emlak.adres));
+
+    cout << "Emlak Fiyatını Girin: ";
+    cin >> emlak.fiyat;
+
+    cout << "Oda Sayısını Girin: ";
+    cin >> emlak.odalar;
+
+    dosya.write((char *)&emlak, sizeof(emlak));
+    dosya.close();
+
+    cout << "Emlak başarıyla eklendi!" << endl;
+}
+
+void EmlakListele()
+{
+    ifstream dosya("emlaklar.dat", ios::binary);
+    Emlak emlak;
+
+    dosya.seekg(0, ios::end);
+    int emlakSayisi = dosya.tellg() / sizeof(emlak);
+    cout << "Toplam Emlak Sayısı: " << emlakSayisi << endl;
+
+    dosya.seekg(0, ios::beg);
+    for (int i = 0; i < emlakSayisi; i++)
+    {
+        dosya.read((char *)&emlak, sizeof(emlak));
+
+        cout << "Emlak " << i + 1 << ":" << endl;
+        cout << "Adres: " << emlak.adres << endl;
+        cout << "Fiyat: $" << fixed << setprecision(2) << emlak.fiyat << endl;
+        cout << "Oda Sayısı: " << emlak.odalar << endl;
+        cout << "---------------------------------" << endl;
+    }
+
+    dosya.close();
+}
+
+void EmlakAra()
+{
+    ifstream dosya("emlaklar.dat", ios::binary);
+    Emlak emlak;
+
+    cout << "Aranacak Emlak Adresini Girin: ";
+    char arananAdres[100];
+    cin.ignore();
+    cin.getline(arananAdres, sizeof(arananAdres));
+
+    bool bulundu = false;
+    while (dosya.read((char *)&emlak, sizeof(emlak)))
+    {
+        if (strcmp(emlak.adres, arananAdres) == 0)
+        {
+            bulundu = true;
+            cout << "Emlak bulundu:" << endl;
+            cout << "Adres: " << emlak.adres << endl;
+            cout << "Fiyat: $" << fixed << setprecision(2) << emlak.fiyat << endl;
+            cout << "Oda Sayısı: " << emlak.odalar << endl;
+            break;
+        }
+    }
+
+    if (!bulundu)
+    {
+        cout << "Emlak bulunamadı!" << endl;
+    }
+
+    dosya.close();
+}
+
+void EmlakSil()
+{
+    ifstream dosya("emlaklar.dat", ios::binary);
+    ofstream tempDosya("temp.dat", ios::binary);
+    Emlak emlak;
+
+    cout << "Silinecek Emlak Adresini Girin: ";
+    char silinecekAdres[100];
+    cin.ignore();
+    cin.getline(silinecekAdres, sizeof(silinecekAdres));
+
+    bool silindi = false;
+    while (dosya.read((char *)&emlak, sizeof(emlak)))
+    {
+        if (strcmp(emlak.adres, silinecekAdres) != 0)
+        {
+            tempDosya.write((char *)&emlak, sizeof(emlak));
+        }
+        else
+        {
+            silindi = true;
+        }
+    }
+
+    dosya.close();
+    tempDosya.close();
+
+    if (silindi)
+    {
+        remove("emlaklar.dat");
+        rename("temp.dat", "emlaklar.dat");
+        cout << "Emlak başarıyla silindi!" << endl;
+    }
+    else
+    {
+        remove("temp.dat");
+        cout << "Emlak bulunamadı!" << endl;
+    }
+}
